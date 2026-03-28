@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Science Toast</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F4EE;
+    --ink: #1C1A16;
+    --amber: #C06818;
+    --muted: #8A8070;
+    --rule: #D8D2C4;
+    --hover-bg: #F0EBE0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  header {
+    border-bottom: 1px solid var(--rule);
+    padding: 2.8rem 0 2rem;
+    text-align: center;
+  }
+
+  .site-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2.4rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    display: block;
+  }
+
+  .site-name span {
+    color: var(--amber);
+  }
+
+  .tagline {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 0.85rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    letter-spacing: 0.02em;
+  }
+
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 1.5rem 6rem;
+  }
+
+  .post-list {
+    margin-top: 0;
+  }
+
+  .post {
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--rule);
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadein 0.4s ease forwards;
+  }
+
+  @keyframes fadein {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .post-title a {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--ink);
+    text-decoration: none;
+    line-height: 1.35;
+    transition: color 0.15s;
+  }
+
+  .post-title a:hover {
+    color: var(--amber);
+  }
+
+  .post-blurb {
+    margin-top: 0.55rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .post-link-hint {
+    display: inline-block;
+    margin-top: 0.7rem;
+    font-size: 0.75rem;
+    color: var(--amber);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-style: italic;
+  }
+
+  .loading {
+    padding: 4rem 0;
+    text-align: center;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.95rem;
+  }
+
+  .error {
+    padding: 3rem 0;
+    color: #A04A08;
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.75rem;
+    color: var(--rule);
+    border-top: 1px solid var(--rule);
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="site-name">Science <span>Toast</span></span>
+  <p class="tagline">a slice of what's known</p>
+</header>
+
+<main>
+  <div class="post-list" id="posts">
+    <div class="loading">loading&hellip;</div>
+  </div>
+</main>
+
+<footer>science toast</footer>
+
+<script>
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT2iJmf1kMKA9tz9pzc7nv9s4nUEvdJGSIstnfGvwzTDavSkbNyaedtqSsxD16twPvd-6eKfoicWU2b/pub?gid=0&single=true&output=csv';
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  return lines.slice(1).map(line => {
+    const cols = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQuotes = !inQuotes; }
+      else if (ch === ',' && !inQuotes) { cols.push(current.trim()); current = ''; }
+      else { current += ch; }
+    }
+    cols.push(current.trim());
+    const row = {};
+    headers.forEach((h, i) => { row[h] = (cols[i] || '').replace(/^"|"$/g, ''); });
+    return row;
+  });
+}
+
+function render(posts) {
+  const container = document.getElementById('posts');
+  if (!posts.length) {
+    container.innerHTML = '<p class="loading">no posts yet</p>';
+    return;
+  }
+  container.innerHTML = posts.map((p, i) => `
+    <div class="post" style="animation-delay:${i * 0.07}s">
+      <div class="post-title">
+        <a href="${p.url}" target="_blank" rel="noopener">${p.title}</a>
+      </div>
+      ${p.blurb ? `<p class="post-blurb">${p.blurb}</p>` : ''}
+      <span class="post-link-hint">read &rarr;</span>
+    </div>
+  `).join('');
+}
+
+fetch(SHEET_URL)
+  .then(r => r.text())
+  .then(text => render(parseCSV(text)))
+  .catch(() => {
+    document.getElementById('posts').innerHTML =
+      '<p class="error">could not load posts — check the sheet is published to the web</p>';
+  });
+</script>
+</body>
+</html>
